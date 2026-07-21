@@ -33,7 +33,7 @@ public class Member {
     private Long id;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "user_id", nullable = false)
+	@JoinColumn(name = "team_id", nullable = false)
 	private Team team;
 	
 	@ManyToOne(fetch = FetchType.LAZY)

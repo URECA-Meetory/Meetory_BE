@@ -3,6 +3,7 @@ package com.meetory.member.entity;
 import java.time.LocalDateTime;
 
 import com.meetory.user.entity.User;
+import com.meetory.team.entity.Team;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;

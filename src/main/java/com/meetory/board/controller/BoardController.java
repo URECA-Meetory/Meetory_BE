@@ -7,6 +7,8 @@ import com.meetory.board.service.BoardService;
 import com.meetory.common.ApiResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.PutMapping;
+import com.meetory.board.dto.BoardUpdateRequest;
 
 import java.util.List;
 
@@ -25,7 +27,7 @@ public class BoardController {
     @PostMapping
     public ResponseEntity<ApiResponse<BoardResponse>> createBoard(
             @Valid @RequestBody BoardCreateRequest request,
-            @AuthenticationPrincipal Long userId) { // 👈 토큰에서 인증된 userId를 받아옵니다!
+            @AuthenticationPrincipal Long userId) { //토큰에서 인증된 userId를 받dma
             
         // 서비스로 진짜 userId를 넘겨줍니다.
         BoardResponse response = boardService.createBoard(request, userId);
@@ -45,5 +47,16 @@ public class BoardController {
         BoardDetailResponse response = boardService.getBoardDetail(boardId);
         
         return ResponseEntity.ok(ApiResponse.success("게시글 상세 조회가 완료되었습니다", response));
+    }
+    
+    @PutMapping("/{boardId}")
+    public ResponseEntity<ApiResponse<BoardResponse>> updateBoard(
+            @PathVariable("boardId") Long boardId,
+            @Valid @RequestBody BoardUpdateRequest request,
+            @AuthenticationPrincipal Long userId) {
+        
+        BoardResponse response = boardService.updateBoard(boardId, request, userId);
+        
+        return ResponseEntity.ok(ApiResponse.success("게시글이 성공적으로 수정되었습니다", response));
     }
 }

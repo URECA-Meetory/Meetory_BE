@@ -2,6 +2,7 @@ package com.meetory.board.service;
 
 import com.meetory.board.dto.BoardCreateRequest;
 import com.meetory.board.dto.BoardResponse;
+import com.meetory.board.dto.BoardUpdateRequest;
 import com.meetory.board.dto.BoardDetailResponse;
 import com.meetory.board.entity.Board;
 import com.meetory.board.repository.BoardRepository;
@@ -54,5 +55,22 @@ public class BoardService {
                 .orElseThrow(() -> new CustomException(ErrorCode.BOARD_NOT_FOUND));
 
         return BoardDetailResponse.from(board);
+    }
+    
+    @Transactional
+    public BoardResponse updateBoard(Long boardId, BoardUpdateRequest request, Long userId) {
+        // 1. 게시글 조회
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new CustomException(ErrorCode.BOARD_NOT_FOUND));
+
+        // 2. 권한 체크 (글 작성자의 ID와 현재 로그인한 유저의 ID가 같은지)
+        if (!board.getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION);
+        }
+
+        // 3. 게시글 수정 (JPA 변경 감지)
+        board.update(request.title(), request.content());
+
+        return BoardResponse.from(board);
     }
 }

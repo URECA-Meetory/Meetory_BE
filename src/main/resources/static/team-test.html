@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>모임 매칭 테스트 페이지</title>
+<style>
+    * { box-sizing: border-box; }
+    body {
+        font-family: "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+        background: #f4f5f7;
+        margin: 0;
+        padding: 24px;
+        color: #222;
+    }
+    h1 { font-size: 20px; }
+    h2 { font-size: 16px; margin-top: 32px; }
+    section {
+        background: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 16px 20px;
+        margin-bottom: 16px;
+    }
+    label { display: inline-block; width: 90px; font-size: 13px; color: #555; }
+    input, select, textarea {
+        padding: 6px 8px;
+        margin: 4px 0;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        font-size: 13px;
+        width: 260px;
+    }
+    textarea { width: 100%; height: 60px; vertical-align: top; }
+    button {
+        background: #2f6fed;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        padding: 7px 14px;
+        font-size: 13px;
+        cursor: pointer;
+        margin-left: 6px;
+    }
+    button.secondary { background: #888; }
+    button.small { padding: 5px 10px; font-size: 12px; }
+    .row { margin-bottom: 6px; }
+    #authStatus {
+        font-size: 13px;
+        padding: 8px 10px;
+        background: #eef3ff;
+        border-radius: 4px;
+        margin-bottom: 10px;
+    }
+    .msg { font-size: 13px; margin-top: 8px; white-space: pre-wrap; }
+    .msg.ok { color: #1a7f37; }
+    .msg.err { color: #d1242f; }
+
+    /* 모임 모집 패널 */
+    .team-panel {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border: 1px solid #e5e5e5;
+        border-radius: 6px;
+        padding: 12px 16px;
+        margin-bottom: 10px;
+        background: #fafbfc;
+    }
+    .team-panel:hover { background: #f0f4ff; }
+    .team-info { cursor: pointer; flex: 1; }
+    .team-title { font-weight: bold; font-size: 15px; }
+    .badge {
+        display: inline-block;
+        font-size: 11px;
+        padding: 2px 6px;
+        border-radius: 10px;
+        background: #dde6ff;
+        color: #2f4fc4;
+        margin-left: 6px;
+    }
+    .badge.closed { background: #f1d6d6; color: #a33; }
+    .team-summary { font-size: 13px; color: #555; margin-top: 4px; }
+    .team-meta { font-size: 12px; color: #888; margin-top: 4px; }
+    .apply-btn { white-space: nowrap; }
+
+    /* 상세 팝업 (모달) */
+    #overlay {
+        display: none;
+        position: fixed; top:0; left:0; right:0; bottom:0;
+        background: rgba(0,0,0,0.4);
+        align-items: center; justify-content: center;
+    }
+    #modal {
+        background: #fff;
+        border-radius: 8px;
+        padding: 24px;
+        width: 420px;
+        max-width: 90%;
+    }
+    #modal h3 { margin-top: 0; }
+    #modal .detail-row { font-size: 13px; margin: 6px 0; }
+    #modal .detail-label { color: #888; width: 90px; display: inline-block; }
+</style>
+</head>
+<body>
+
+<h1>모임 매칭 플랫폼 - 테스트 페이지</h1>
+<div id="authStatus">로그인되어 있지 않습니다.</div>
+
+<!-- ===================== 회원가입 / 로그인 ===================== -->
+<section>
+    <h2>1. 회원가입</h2>
+    <div class="row"><label>이메일</label><input type="text" id="suEmail" value="user1@test.com"></div>
+    <div class="row"><label>비밀번호</label><input type="password" id="suPassword" value="password123"></div>
+    <div class="row"><label>닉네임</label><input type="text" id="suNickname" value="테스트유저1"></div>
+    <button onclick="signup()">회원가입</button>
+    <div id="signupMsg" class="msg"></div>
+
+    <h2>2. 로그인</h2>
+    <div class="row"><label>이메일</label><input type="text" id="liEmail" value="user1@test.com"></div>
+    <div class="row"><label>비밀번호</label><input type="password" id="liPassword" value="password123"></div>
+    <button onclick="login()">로그인</button>
+    <button class="secondary" onclick="logout()">로그아웃</button>
+    <div id="loginMsg" class="msg"></div>
+</section>
+
+<!-- ===================== 모임 개설 ===================== -->
+<section>
+    <h2>3. 모임 개설 (로그인 필요)</h2>
+    <div class="row"><label>모임 이름</label><input type="text" id="teamTitle" value="알고리즘 스터디"></div>
+    <div class="row">
+        <label>카테고리</label>
+        <select id="teamCategory">
+            <option>스터디</option>
+            <option>독서</option>
+            <option>운동</option>
+            <option>취미</option>
+            <option>기타</option>
+        </select>
+    </div>
+    <div class="row"><label>최대 인원</label><input type="number" id="teamMaxMembers" value="5" style="width:80px;"></div>
+    <div class="row"><label style="vertical-align:top;">모임 소개</label>
+        <textarea id="teamDescription">매주 3회 알고리즘 문제풀이를 함께 하는 스터디입니다. 백준 실버~골드 수준을 목표로 합니다.</textarea>
+    </div>
+    <button onclick="createTeam()">개설하기</button>
+    <div id="createTeamMsg" class="msg"></div>
+</section>
+
+<!-- ===================== 모임 목록 ===================== -->
+<section>
+    <h2>4. 모임 목록</h2>
+    <button class="secondary" onclick="loadTeamList()">새로고침</button>
+    <div id="teamList" style="margin-top:12px;"></div>
+</section>
+
+<!-- ===================== 상세 팝업 ===================== -->
+<div id="overlay">
+    <div id="modal">
+        <h3 id="modalTitle"></h3>
+        <div class="detail-row"><span class="detail-label">카테고리</span><span id="modalCategory"></span></div>
+        <div class="detail-row"><span class="detail-label">개설자</span><span id="modalLeader"></span></div>
+        <div class="detail-row"><span class="detail-label">인원</span><span id="modalMembers"></span></div>
+        <div class="detail-row"><span class="detail-label">상태</span><span id="modalStatus"></span></div>
+        <div class="detail-row"><span class="detail-label">개설일</span><span id="modalCreatedAt"></span></div>
+        <div class="detail-row" style="margin-top:10px;"><span id="modalDescription"></span></div>
+        <div style="margin-top:16px; text-align:right;">
+            <button class="apply-btn" id="modalApplyBtn">신청하기</button>
+            <button class="secondary" onclick="closeModal()">닫기</button>
+        </div>
+    </div>
+</div>
+
+<script>
+const API_BASE = ""; // 상대경로
+
+// ---------- 인증 토큰 관리 (테스트 편의를 위해 sessionStorage 사용) ----------
+function getToken() { return sessionStorage.getItem("accessToken"); }
+function getNickname() { return sessionStorage.getItem("nickname"); }
+
+function setAuth(accessToken, userId, nickname) {
+    sessionStorage.setItem("accessToken", accessToken);
+    sessionStorage.setItem("userId", userId);
+    sessionStorage.setItem("nickname", nickname);
+    renderAuthStatus();
+}
+
+function logout() {
+    sessionStorage.clear();
+    renderAuthStatus();
+    document.getElementById("loginMsg").textContent = "";
+}
+
+function renderAuthStatus() {
+    const box = document.getElementById("authStatus");
+    const token = getToken();
+    if (token) {
+        box.textContent = `로그인됨: ${getNickname()} (userId=${sessionStorage.getItem("userId")})`;
+    } else {
+        box.textContent = "로그인되어 있지 않습니다. (모임 개설/신청하기는 로그인 후 가능)";
+    }
+}
+
+// ---------- 공통 fetch 래퍼 ----------
+async function apiFetch(url, options = {}) {
+    const headers = Object.assign(
+        { "Content-Type": "application/json" },
+        options.headers || {}
+    );
+    const token = getToken();
+    if (token) headers["Authorization"] = "Bearer " + token;
+
+    const res = await fetch(API_BASE + url, { ...options, headers });
+    let body = null;
+    try { body = await res.json(); } catch (e) { /* no body */ }
+    return { ok: res.ok, status: res.status, body };
+}
+
+function showMsg(elId, text, isOk) {
+    const el = document.getElementById(elId);
+    el.textContent = text;
+    el.className = "msg " + (isOk ? "ok" : "err");
+}
+
+// ---------- 1. 회원가입 ----------
+async function signup() {
+    const payload = {
+        email: document.getElementById("suEmail").value,
+        password: document.getElementById("suPassword").value,
+        nickname: document.getElementById("suNickname").value
+    };
+    const { ok, body } = await apiFetch("/api/auth/signup", {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+    showMsg("signupMsg", body ? body.message : (ok ? "성공" : "실패"), ok);
+}
+
+// ---------- 2. 로그인 ----------
+async function login() {
+    const payload = {
+        email: document.getElementById("liEmail").value,
+        password: document.getElementById("liPassword").value
+    };
+    const { ok, body } = await apiFetch("/api/auth/login", {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+    if (ok && body && body.data) {
+        setAuth(body.data.accessToken, body.data.userId, body.data.nickname);
+        showMsg("loginMsg", "로그인 성공", true);
+    } else {
+        showMsg("loginMsg", body ? body.message : "로그인 실패", false);
+    }
+}
+
+// ---------- 3. 모임 개설 ----------
+async function createTeam() {
+    const payload = {
+        title: document.getElementById("teamTitle").value,
+        category: document.getElementById("teamCategory").value,
+        description: document.getElementById("teamDescription").value,
+        maxMembers: Number(document.getElementById("teamMaxMembers").value)
+    };
+    const { ok, body } = await apiFetch("/api/teams", {
+        method: "POST",
+        body: JSON.stringify(payload)
+    });
+    showMsg("createTeamMsg", body ? body.message : (ok ? "성공" : "실패"), ok);
+    if (ok) loadTeamList();
+}
+
+// ---------- 4. 모임 목록 ----------
+async function loadTeamList() {
+    const { ok, body } = await apiFetch("/api/teams", { method: "GET" });
+    const listEl = document.getElementById("teamList");
+    listEl.innerHTML = "";
+
+    if (!ok || !body || !body.data) {
+        listEl.textContent = "목록을 불러오지 못했습니다.";
+        return;
+    }
+
+    if (body.data.length === 0) {
+        listEl.textContent = "개설된 모임이 없습니다. 먼저 모임을 개설해보세요.";
+        return;
+    }
+
+    body.data.forEach(team => {
+        const panel = document.createElement("div");
+        panel.className = "team-panel";
+
+        const closedBadge = team.status !== "모집중" ? ' <span class="badge closed">' + team.status + '</span>' : ' <span class="badge">모집중</span>';
+
+        panel.innerHTML = `
+            <div class="team-info" onclick="openTeamDetail(${team.teamId})">
+                <span class="team-title">${team.title}</span>
+                <span class="badge">${team.category}</span>
+                ${closedBadge}
+                <div class="team-summary">${team.summary}</div>
+                <div class="team-meta">개설자 ${team.leaderNickname} · 인원 ${team.currentMembers}/${team.maxMembers}</div>
+            </div>
+            <button class="apply-btn small" onclick="applyToTeam(${team.teamId})">신청하기</button>
+        `;
+        listEl.appendChild(panel);
+    });
+}
+
+// ---------- 패널의 설명 클릭 -> 상세 팝업 ----------
+async function openTeamDetail(teamId) {
+    const { ok, body } = await apiFetch(`/api/teams/${teamId}`, { method: "GET" });
+    if (!ok || !body || !body.data) {
+        alert("상세 정보를 불러오지 못했습니다: " + (body ? body.message : ""));
+        return;
+    }
+    const d = body.data;
+    document.getElementById("modalTitle").textContent = d.title;
+    document.getElementById("modalCategory").textContent = d.category;
+    document.getElementById("modalLeader").textContent = d.leaderNickname;
+    document.getElementById("modalMembers").textContent = `${d.currentMembers} / ${d.maxMembers} 명`;
+    document.getElementById("modalStatus").textContent = d.status;
+    document.getElementById("modalCreatedAt").textContent = d.createdAt;
+    document.getElementById("modalDescription").textContent = d.description;
+
+    const applyBtn = document.getElementById("modalApplyBtn");
+    applyBtn.onclick = () => applyToTeam(d.teamId);
+
+    document.getElementById("overlay").style.display = "flex";
+}
+
+function closeModal() {
+    document.getElementById("overlay").style.display = "none";
+}
+
+// ---------- 신청하기 버튼 ----------
+async function applyToTeam(teamId) {
+    if (!getToken()) {
+        alert("로그인 후 신청할 수 있습니다.");
+        return;
+    }
+    const { ok, body } = await apiFetch(`/api/teams/${teamId}/apply`, { method: "POST" });
+    alert(body ? body.message : (ok ? "신청 완료" : "신청 실패"));
+    if (ok) {
+        closeModal();
+        loadTeamList();
+    }
+}
+
+// ---------- 초기화 ----------
+renderAuthStatus();
+loadTeamList();
+</script>
+
+</body>
+</html>

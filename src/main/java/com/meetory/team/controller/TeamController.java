@@ -33,6 +33,10 @@ import lombok.RequiredArgsConstructor;
 //   GET  /api/teams/{teamId}/applications              : 대기중 신청 목록 - 리더 본인만
 //   POST /api/teams/{teamId}/applications/{memberId}/approve : 신청 수락 - 리더 본인만
 //   POST /api/teams/{teamId}/applications/{memberId}/reject  : 신청 거절 - 리더 본인만
+//
+// ※ @PathVariable 은 컴파일 시 -parameters 플래그가 없으면 파라미터 이름을 못 읽어와서
+//    "Name for argument of type [java.lang.Long] not specified" 예외가 발생할 수 있으므로
+//    build.gradle 설정과 별개로 이름을 명시적으로 지정한다.
 @RestController
 @RequestMapping("/api/teams")
 @RequiredArgsConstructor
@@ -55,13 +59,14 @@ public class TeamController {
     }
 
     @GetMapping("/{teamId}")
-    public ResponseEntity<ApiResponse<TeamDetailResponse>> getTeamDetail(@PathVariable Long teamId) {
+    public ResponseEntity<ApiResponse<TeamDetailResponse>> getTeamDetail(
+            @PathVariable("teamId") Long teamId) {
         return ResponseEntity.ok(ApiResponse.success(teamService.getTeamDetail(teamId)));
     }
 
     @PostMapping("/{teamId}/apply")
     public ResponseEntity<ApiResponse<TeamApplyResponse>> applyToTeam(
-            @PathVariable Long teamId,
+            @PathVariable("teamId") Long teamId,
             Authentication authentication) {
         TeamApplyResponse response = teamService.applyToTeam(teamId, currentUserId(authentication));
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -70,14 +75,15 @@ public class TeamController {
 
     // 현재 팀에 속해있는(승인된) 멤버 목록 - 누구나 열람 가능
     @GetMapping("/{teamId}/members")
-    public ResponseEntity<ApiResponse<List<TeamMemberResponse>>> getTeamMembers(@PathVariable Long teamId) {
+    public ResponseEntity<ApiResponse<List<TeamMemberResponse>>> getTeamMembers(
+            @PathVariable("teamId") Long teamId) {
         return ResponseEntity.ok(ApiResponse.success(teamService.getTeamMembers(teamId)));
     }
 
     // 대기중인 신청 목록 - 리더 본인만 조회 가능
     @GetMapping("/{teamId}/applications")
     public ResponseEntity<ApiResponse<List<TeamApplicationResponse>>> getApplications(
-            @PathVariable Long teamId,
+            @PathVariable("teamId") Long teamId,
             Authentication authentication) {
         List<TeamApplicationResponse> applications =
                 teamService.getApplications(teamId, currentUserId(authentication));
@@ -87,8 +93,8 @@ public class TeamController {
     // 신청 수락 - 리더 본인만
     @PostMapping("/{teamId}/applications/{memberId}/approve")
     public ResponseEntity<ApiResponse<Void>> approveApplication(
-            @PathVariable Long teamId,
-            @PathVariable Long memberId,
+            @PathVariable("teamId") Long teamId,
+            @PathVariable("memberId") Long memberId,
             Authentication authentication) {
         teamService.approveApplication(teamId, memberId, currentUserId(authentication));
         return ResponseEntity.ok(ApiResponse.success("신청을 수락했습니다", null));
@@ -97,8 +103,8 @@ public class TeamController {
     // 신청 거절 - 리더 본인만
     @PostMapping("/{teamId}/applications/{memberId}/reject")
     public ResponseEntity<ApiResponse<Void>> rejectApplication(
-            @PathVariable Long teamId,
-            @PathVariable Long memberId,
+            @PathVariable("teamId") Long teamId,
+            @PathVariable("memberId") Long memberId,
             Authentication authentication) {
         teamService.rejectApplication(teamId, memberId, currentUserId(authentication));
         return ResponseEntity.ok(ApiResponse.success("신청을 거절했습니다", null));

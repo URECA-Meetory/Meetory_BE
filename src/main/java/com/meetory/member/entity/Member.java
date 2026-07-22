@@ -25,8 +25,8 @@ import lombok.NoArgsConstructor;
 
 // Team - User 의 신청/가입 관계를 나타내는 조인 엔티티
 // "신청하기" 버튼 -> Member(status=대기) 생성
-// 같은 유저가 같은 팀에 중복 신청하지 못하도록 (team_id, user_id) 유니크 제약을 추가
-
+// 기존 코드에서 team, user JoinColumn 이 둘 다 "user_id" 로 중복 지정되어 있던 버그를 "team_id" 로 수정하고
+// 같은 유저가 같은 팀에 중복 신청하지 못하도록 (team_id, user_id) 유니크 제약을 추가함
 @Entity
 @Table(
     name = "member",
@@ -41,7 +41,7 @@ public class Member {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id", nullable = false)
+    @JoinColumn(name = "team_id", nullable = false) // 기존 버그: "user_id" 로 잘못 지정되어 있었음
     private Team team;
 
     @ManyToOne(fetch = FetchType.LAZY)

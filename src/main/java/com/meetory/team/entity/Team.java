@@ -44,7 +44,7 @@ public class Team {
 
     // 모임 소개(상세 팝업 전문 노출용) - 길이 제한 없이 저장
     @Lob
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "LONGTEXT")
     private String description;
 
     @Column(name = "max_members", nullable = false)

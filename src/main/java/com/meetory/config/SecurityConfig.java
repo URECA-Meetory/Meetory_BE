@@ -42,7 +42,9 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        // 팀 매칭 목록/상세는 잡코리아 공고처럼 비로그인 상태에서도 열람 가능해야 함
+                        // 브라우저 테스트용 정적 페이지 (src/main/resources/static/team-test.html)
+                        .requestMatchers(HttpMethod.GET, "/", "/team-test.html", "/favicon.ico").permitAll()
+                        // 모임 매칭 목록/상세가 비로그인에서도 열람 가능하도록
                         // (모임 개설 POST /api/teams, 신청 POST /api/teams/{id}/apply 는 로그인 필요 -> anyRequest().authenticated() 로 처리)
                         .requestMatchers(HttpMethod.GET, "/api/teams/**").permitAll()
                         .anyRequest().authenticated()

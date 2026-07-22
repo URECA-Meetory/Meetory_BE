@@ -33,7 +33,9 @@ public class Member {
     private Long id;
 	
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "user_id", nullable = false)
+	//게시판 부분 테스트용으로 임시로 바꿈
+	//원래코드 @JoinColumn(name = "user_id", nullable = false)
+	@JoinColumn(name = "user_id", nullable = false, insertable = false, updatable = false)
 	private Team team;
 	
 	@ManyToOne(fetch = FetchType.LAZY)

@@ -41,6 +41,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/index.html").permitAll()//게시판 부분 테스트용으로 임시로 바꿈 삭제예정
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(

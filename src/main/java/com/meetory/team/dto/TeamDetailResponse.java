@@ -10,6 +10,7 @@ public record TeamDetailResponse(
     String title,
     String category,
     String description,      // 소개 전문
+    Long leaderId,           // 프론트에서 "내가 리더인지"(신청 관리 UI 노출 여부) 판별용
     String leaderNickname,
     int currentMembers,
     int maxMembers,
@@ -22,6 +23,7 @@ public record TeamDetailResponse(
             team.getTitle(),
             team.getCategory().name(),
             team.getDescription(),
+            team.getLeader().getId(),
             team.getLeader().getNickname(),
             (int) currentMembers,
             team.getMaxMembers(),

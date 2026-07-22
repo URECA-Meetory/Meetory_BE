@@ -48,11 +48,21 @@ public class JwtTokenProvider {
         return LocalDateTime.ofInstant(expiration.toInstant(), ZoneId.systemDefault());
     }
 
+//    public boolean validateToken(String token) {
+//        try {
+//            parseClaims(token);
+//            return true;
+//        } catch (JwtException | IllegalArgumentException e) {
+//            return false;
+//        }
+//    }
+    
     public boolean validateToken(String token) {
         try {
             parseClaims(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
+            System.out.println(">>> JWT validation failed: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             return false;
         }
     }

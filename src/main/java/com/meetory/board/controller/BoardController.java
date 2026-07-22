@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PutMapping;
 import com.meetory.board.dto.BoardUpdateRequest;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import java.util.List;
 
@@ -59,4 +60,15 @@ public class BoardController {
         
         return ResponseEntity.ok(ApiResponse.success("게시글이 성공적으로 수정되었습니다", response));
     }
+    
+    @DeleteMapping("/{boardId}")
+    public ResponseEntity<ApiResponse<Void>> deleteBoard(
+            @PathVariable("boardId") Long boardId,
+            @AuthenticationPrincipal Long userId) {
+        
+        boardService.deleteBoard(boardId, userId);
+        
+        return ResponseEntity.ok(ApiResponse.success("게시글이 성공적으로 삭제되었습니다", null));
+    }
+    
 }

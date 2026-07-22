@@ -73,4 +73,19 @@ public class BoardService {
 
         return BoardResponse.from(board);
     }
+    
+    @Transactional
+    public void deleteBoard(Long boardId, Long userId) {
+        // 1. 게시글 조회
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new CustomException(ErrorCode.BOARD_NOT_FOUND));
+
+        // 2. 권한 체크 (글 작성자의 ID와 현재 로그인한 유저의 ID가 같은지)
+        if (!board.getUser().getId().equals(userId)) {
+            throw new CustomException(ErrorCode.FORBIDDEN_ACTION);
+        }
+
+        // 3. 게시글 삭제
+        boardRepository.delete(board);
+    }
 }

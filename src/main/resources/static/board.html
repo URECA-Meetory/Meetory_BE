@@ -100,6 +100,7 @@
             <!-- 글 작성자에게만 보이는 수정/삭제 버튼 영역 -->
             <div class="modal-footer" id="detailFooter" style="display: none;">
                 <button type="button" class="btn btn-primary" onclick="openUpdateModal()">수정하기</button>
+				<button type="button" class="btn btn-danger" onclick="confirmDelete()">삭제하기</button>
             </div>
           </div>
         </div>
@@ -251,6 +252,26 @@
                 alert("수정 실패: " + data.message); 
             }
         }
+		async function confirmDelete() {
+		            if(confirm("정말로 이 게시글을 삭제하시겠습니까? (삭제 후 복구할 수 없습니다)")) {
+		                let boardId = document.getElementById("updateBoardId").value;
+		                
+		                let res = await fetch(`/api/boards/${boardId}`, { 
+		                    method: "DELETE", 
+		                    headers: { "Authorization": `Bearer ${accessToken}` } 
+		                });
+		                
+		                let data = await res.json();
+		                
+		                if(data.success){ 
+		                    alert("글이 성공적으로 삭제되었습니다."); 
+		                    listBoard(); // 목록 새로고침
+		                    detailModal.hide(); // 모달 닫기
+		                } else { 
+		                    alert("삭제 실패: " + data.message); 
+		                }
+		            }
+		        }
 	</script>	
 </body>
 </html>

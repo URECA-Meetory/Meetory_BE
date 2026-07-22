@@ -2,6 +2,7 @@ package com.meetory.board.service;
 
 import com.meetory.board.dto.BoardCreateRequest;
 import com.meetory.board.dto.BoardResponse;
+import com.meetory.board.dto.BoardDetailResponse;
 import com.meetory.board.entity.Board;
 import com.meetory.board.repository.BoardRepository;
 import com.meetory.common.exception.CustomException;
@@ -9,6 +10,9 @@ import com.meetory.common.exception.ErrorCode;
 import com.meetory.user.entity.User;
 import com.meetory.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,11 +24,11 @@ public class BoardService {
     private final UserRepository userRepository;
 
     @Transactional
-    public BoardResponse createBoard(BoardCreateRequest request) {
-        // 추후 로그인 기능이 완성되면 SecurityContext에서 현재 인증된 유저 정보를 가져오도록 수정
-        Long mockUserId = 1L; 
+    public BoardResponse createBoard(BoardCreateRequest request, Long userId) {
+    	
         
-        User user = userRepository.findById(mockUserId)
+        
+    	User user = userRepository.findById(userId)
                 .orElseThrow(() -> new CustomException(ErrorCode.USER_NOT_FOUND));
 
         Board board = Board.builder()
@@ -36,5 +40,19 @@ public class BoardService {
         Board savedBoard = boardRepository.save(board);
         
         return BoardResponse.from(savedBoard);
+    }
+    
+    @Transactional(readOnly = true)
+    public List<BoardResponse> getBoardList() {
+        return boardRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(BoardResponse::from)
+                .toList();
+    }
+    @Transactional(readOnly = true)
+    public BoardDetailResponse getBoardDetail(Long boardId) {
+        Board board = boardRepository.findById(boardId)
+                .orElseThrow(() -> new CustomException(ErrorCode.BOARD_NOT_FOUND));
+
+        return BoardDetailResponse.from(board);
     }
 }

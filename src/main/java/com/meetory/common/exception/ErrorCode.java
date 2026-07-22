@@ -18,7 +18,10 @@ public enum ErrorCode {
 	ALREADY_APPLIED(HttpStatus.CONFLICT, "이미 신청한 모임입니다"),
 	TEAM_NOT_RECRUITING(HttpStatus.BAD_REQUEST, "모집이 마감된 모임입니다"),
 	TEAM_FULL(HttpStatus.CONFLICT, "모집 인원이 마감되었습니다"),
-	SELF_APPLY_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "본인이 개설한 모임에는 신청할 수 없습니다");
+	SELF_APPLY_NOT_ALLOWED(HttpStatus.BAD_REQUEST, "본인이 개설한 모임에는 신청할 수 없습니다"),
+	NOT_TEAM_LEADER(HttpStatus.FORBIDDEN, "모임 리더만 처리할 수 있습니다"),
+	MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 신청 정보입니다"),
+	APPLICATION_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리된 신청입니다");
 
 	private final HttpStatus status;
 	private final String message;

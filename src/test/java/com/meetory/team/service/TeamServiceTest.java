@@ -231,7 +231,7 @@ class TeamServiceTest {
         given(memberRepository.findByTeamIdAndStatus(100L, MemberStatus.승인))
                 .willReturn(List.of(approvedMember));
 
-        List<?> members = teamService.getTeamMembers(100L);
+        List<?> members = teamService.getTeamMembers(100L, 1L);
 
         assertThat(members).hasSize(1);
     }
@@ -240,8 +240,8 @@ class TeamServiceTest {
     void 팀멤버목록조회_실패_존재하지않는팀() {
         given(teamRepository.findById(999L)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> teamService.getTeamMembers(999L))
-                .isInstanceOf(CustomException.class);
+        assertThatThrownBy(() -> teamService.getTeamMembers(999L, 1L))
+        .isInstanceOf(CustomException.class);
     }
 
     // ======== 신청 목록 (리더 전용) ========

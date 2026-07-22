@@ -90,4 +90,8 @@ public class Team {
     public boolean isLeader(Long userId) {
         return this.leader.getId().equals(userId);
     }
+    
+    public void reopenRecruiting() {
+        this.status = TeamStatus.모집중;
+    }
 }

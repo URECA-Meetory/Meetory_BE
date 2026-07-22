@@ -11,10 +11,12 @@ import com.meetory.common.exception.ErrorCode;
 import com.meetory.member.entity.Member;
 import com.meetory.member.entity.MemberStatus;
 import com.meetory.member.repository.MemberRepository;
+import com.meetory.team.dto.TeamApplicationResponse;
 import com.meetory.team.dto.TeamApplyResponse;
 import com.meetory.team.dto.TeamCreateRequest;
 import com.meetory.team.dto.TeamDetailResponse;
 import com.meetory.team.dto.TeamListResponse;
+import com.meetory.team.dto.TeamMemberResponse;
 import com.meetory.team.entity.Team;
 import com.meetory.team.repository.TeamRepository;
 import com.meetory.user.entity.User;
@@ -101,6 +103,69 @@ public class TeamService {
         Member savedMember = memberRepository.save(member);
 
         return TeamApplyResponse.of(savedMember);
+    }
+
+    // 현재 팀에 속해있는(승인된) 멤버 목록 - 누구나 열람 가능
+    public List<TeamMemberResponse> getTeamMembers(Long teamId) {
+        findTeam(teamId); // 존재하지 않는 팀이면 TEAM_NOT_FOUND
+        return memberRepository.findByTeamIdAndStatus(teamId, MemberStatus.승인).stream()
+                .map(TeamMemberResponse::of)
+                .collect(Collectors.toList());
+    }
+
+    // 대기중인 신청 목록 - 리더 본인만 조회 가능
+    public List<TeamApplicationResponse> getApplications(Long teamId, Long requesterId) {
+        Team team = findTeam(teamId);
+        requireLeader(team, requesterId);
+        return memberRepository.findByTeamIdAndStatus(teamId, MemberStatus.대기).stream()
+                .map(TeamApplicationResponse::of)
+                .collect(Collectors.toList());
+    }
+
+    // 신청 수락 - 리더 본인만 처리 가능. 승인 시점에 다시 한번 정원을 체크한다.
+    @Transactional
+    public void approveApplication(Long teamId, Long memberId, Long requesterId) {
+        Team team = findTeam(teamId);
+        requireLeader(team, requesterId);
+        Member member = findMemberInTeam(team, memberId);
+
+        if (!member.isPending()) {
+            throw new CustomException(ErrorCode.APPLICATION_ALREADY_PROCESSED);
+        }
+        if (countApprovedMembers(team) >= team.getMaxMembers()) {
+            throw new CustomException(ErrorCode.TEAM_FULL);
+        }
+
+        member.approve(); // 영속 상태 엔티티 - 트랜잭션 커밋 시점에 더티체킹으로 반영됨
+    }
+
+    // 신청 거절 - 리더 본인만 처리 가능
+    @Transactional
+    public void rejectApplication(Long teamId, Long memberId, Long requesterId) {
+        Team team = findTeam(teamId);
+        requireLeader(team, requesterId);
+        Member member = findMemberInTeam(team, memberId);
+
+        if (!member.isPending()) {
+            throw new CustomException(ErrorCode.APPLICATION_ALREADY_PROCESSED);
+        }
+
+        member.reject();
+    }
+
+    private void requireLeader(Team team, Long requesterId) {
+        if (!team.isLeader(requesterId)) {
+            throw new CustomException(ErrorCode.NOT_TEAM_LEADER);
+        }
+    }
+
+    private Member findMemberInTeam(Team team, Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new CustomException(ErrorCode.MEMBER_NOT_FOUND));
+        if (!member.getTeam().getId().equals(team.getId())) {
+            throw new CustomException(ErrorCode.MEMBER_NOT_FOUND);
+        }
+        return member;
     }
 
     private Team findTeam(Long teamId) {

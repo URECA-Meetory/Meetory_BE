@@ -214,4 +214,170 @@ class TeamServiceTest {
         assertThatThrownBy(() -> teamService.applyToTeam(100L, 2L))
                 .isInstanceOf(CustomException.class);
     }
+
+    // ======== 현재 팀 멤버 목록 ========
+
+    @Test
+    void 팀멤버목록조회_성공() {
+        User leader = buildUser(1L, "leader@test.com", "리더");
+        User applicant = buildUser(2L, "member@test.com", "지원자");
+        Team team = buildTeam(100L, leader, 5, TeamStatus.모집중);
+
+        Member approvedMember = Member.builder().team(team).user(applicant).build();
+        approvedMember.approve();
+        ReflectionTestUtils.setField(approvedMember, "id", 1000L);
+
+        given(teamRepository.findById(100L)).willReturn(Optional.of(team));
+        given(memberRepository.findByTeamIdAndStatus(100L, MemberStatus.승인))
+                .willReturn(List.of(approvedMember));
+
+        List<?> members = teamService.getTeamMembers(100L);
+
+        assertThat(members).hasSize(1);
+    }
+
+    @Test
+    void 팀멤버목록조회_실패_존재하지않는팀() {
+        given(teamRepository.findById(999L)).willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> teamService.getTeamMembers(999L))
+                .isInstanceOf(CustomException.class);
+    }
+
+    // ======== 신청 목록 (리더 전용) ========
+
+    @Test
+    void 신청목록조회_성공() {
+        User leader = buildUser(1L, "leader@test.com", "리더");
+        User applicant = buildUser(2L, "member@test.com", "지원자");
+        Team team = buildTeam(100L, leader, 5, TeamStatus.모집중);
+
+        Member pendingMember = Member.builder().team(team).user(applicant).build();
+        ReflectionTestUtils.setField(pendingMember, "id", 1000L);
+
+        given(teamRepository.findById(100L)).willReturn(Optional.of(team));
+        given(memberRepository.findByTeamIdAndStatus(100L, MemberStatus.대기))
+                .willReturn(List.of(pendingMember));
+
+        List<?> applications = teamService.getApplications(100L, 1L); // 리더(1L) 가 조회
+
+        assertThat(applications).hasSize(1);
+    }
+
+    @Test
+    void 신청목록조회_실패_리더아님() {
+        User leader = buildUser(1L, "leader@test.com", "리더");
+        User other = buildUser(3L, "other@test.com", "다른유저");
+        Team team = buildTeam(100L, leader, 5, TeamStatus.모집중);
+
+        given(teamRepository.findById(100L)).willReturn(Optional.of(team));
+
+        assertThatThrownBy(() -> teamService.getApplications(100L, 3L)) // 리더가 아닌 3L 이 조회 시도
+                .isInstanceOf(CustomException.class);
+    }
+
+    // ======== 신청 수락 ========
+
+    @Test
+    void 신청수락_성공() {
+        User leader = buildUser(1L, "leader@test.com", "리더");
+        User applicant = buildUser(2L, "member@test.com", "지원자");
+        Team team = buildTeam(100L, leader, 5, TeamStatus.모집중);
+
+        Member pendingMember = Member.builder().team(team).user(applicant).build();
+        ReflectionTestUtils.setField(pendingMember, "id", 1000L);
+
+        given(teamRepository.findById(100L)).willReturn(Optional.of(team));
+        given(memberRepository.findById(1000L)).willReturn(Optional.of(pendingMember));
+        given(memberRepository.countByTeamAndStatus(team, MemberStatus.승인)).willReturn(1L);
+
+        teamService.approveApplication(100L, 1000L, 1L); // 리더(1L) 가 수락
+
+        assertThat(pendingMember.getStatus()).isEqualTo(MemberStatus.승인);
+    }
+
+    @Test
+    void 신청수락_실패_리더아님() {
+        User leader = buildUser(1L, "leader@test.com", "리더");
+        User applicant = buildUser(2L, "member@test.com", "지원자");
+        Team team = buildTeam(100L, leader, 5, TeamStatus.모집중);
+
+        given(teamRepository.findById(100L)).willReturn(Optional.of(team));
+
+        assertThatThrownBy(() -> teamService.approveApplication(100L, 1000L, 2L)) // 지원자 본인이 수락 시도
+                .isInstanceOf(CustomException.class);
+    }
+
+    @Test
+    void 신청수락_실패_이미처리됨() {
+        User leader = buildUser(1L, "leader@test.com", "리더");
+        User applicant = buildUser(2L, "member@test.com", "지원자");
+        Team team = buildTeam(100L, leader, 5, TeamStatus.모집중);
+
+        Member alreadyApprovedMember = Member.builder().team(team).user(applicant).build();
+        alreadyApprovedMember.approve(); // 이미 승인된 상태
+        ReflectionTestUtils.setField(alreadyApprovedMember, "id", 1000L);
+
+        given(teamRepository.findById(100L)).willReturn(Optional.of(team));
+        given(memberRepository.findById(1000L)).willReturn(Optional.of(alreadyApprovedMember));
+
+        assertThatThrownBy(() -> teamService.approveApplication(100L, 1000L, 1L))
+                .isInstanceOf(CustomException.class);
+    }
+
+    @Test
+    void 신청수락_실패_정원초과() {
+        User leader = buildUser(1L, "leader@test.com", "리더");
+        User applicant = buildUser(2L, "member@test.com", "지원자");
+        Team team = buildTeam(100L, leader, 1, TeamStatus.모집중); // 정원 1명 (리더 자리 포함 이미 꽉 참)
+
+        Member pendingMember = Member.builder().team(team).user(applicant).build();
+        ReflectionTestUtils.setField(pendingMember, "id", 1000L);
+
+        given(teamRepository.findById(100L)).willReturn(Optional.of(team));
+        given(memberRepository.findById(1000L)).willReturn(Optional.of(pendingMember));
+        given(memberRepository.countByTeamAndStatus(team, MemberStatus.승인)).willReturn(1L);
+
+        assertThatThrownBy(() -> teamService.approveApplication(100L, 1000L, 1L))
+                .isInstanceOf(CustomException.class);
+    }
+
+    // ======== 신청 거절 ========
+
+    @Test
+    void 신청거절_성공() {
+        User leader = buildUser(1L, "leader@test.com", "리더");
+        User applicant = buildUser(2L, "member@test.com", "지원자");
+        Team team = buildTeam(100L, leader, 5, TeamStatus.모집중);
+
+        Member pendingMember = Member.builder().team(team).user(applicant).build();
+        ReflectionTestUtils.setField(pendingMember, "id", 1000L);
+
+        given(teamRepository.findById(100L)).willReturn(Optional.of(team));
+        given(memberRepository.findById(1000L)).willReturn(Optional.of(pendingMember));
+
+        teamService.rejectApplication(100L, 1000L, 1L);
+
+        assertThat(pendingMember.getStatus()).isEqualTo(MemberStatus.거절);
+    }
+
+    @Test
+    void 신청거절_실패_다른팀의신청건() {
+        User leader = buildUser(1L, "leader@test.com", "리더");
+        User otherLeader = buildUser(4L, "other-leader@test.com", "다른리더");
+        User applicant = buildUser(2L, "member@test.com", "지원자");
+
+        Team team = buildTeam(100L, leader, 5, TeamStatus.모집중);
+        Team otherTeam = buildTeam(200L, otherLeader, 5, TeamStatus.모집중);
+
+        // pendingMember 는 otherTeam(200L) 소속인데 team(100L) 의 리더가 처리를 시도하는 상황
+        Member pendingMember = Member.builder().team(otherTeam).user(applicant).build();
+        ReflectionTestUtils.setField(pendingMember, "id", 1000L);
+
+        given(teamRepository.findById(100L)).willReturn(Optional.of(team));
+        given(memberRepository.findById(1000L)).willReturn(Optional.of(pendingMember));
+
+        assertThatThrownBy(() -> teamService.rejectApplication(100L, 1000L, 1L))
+                .isInstanceOf(CustomException.class);
+    }
 }

@@ -42,13 +42,10 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        // 브라우저 테스트용 정적 페이지 (src/main/resources/static/team-test.html)
                         .requestMatchers(HttpMethod.GET, "/", "/team-test.html", "/favicon.ico").permitAll()
-                        // 대기중 신청 목록(GET applications)은 리더 본인만 볼 수 있어야 하므로
-                        // 아래의 넓은 permitAll 규칙보다 반드시 먼저 매칭되도록 위에 둔다 (Spring Security 는 먼저 매칭되는 규칙을 사용)
+                        .requestMatchers(HttpMethod.GET, "/api/teams/my").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/teams/*/applications").authenticated()
-                        // 팀 매칭 목록/상세/멤버목록은 잡코리아 공고처럼 비로그인 상태에서도 열람 가능해야 함
-                        // (모임 개설 POST /api/teams, 신청 POST /api/teams/{id}/apply, 승인/거절 POST 는 로그인 필요 -> anyRequest().authenticated() 로 처리)
+                        .requestMatchers(HttpMethod.GET, "/api/teams/*/members").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/teams/**").permitAll()
                         .anyRequest().authenticated()
                 )

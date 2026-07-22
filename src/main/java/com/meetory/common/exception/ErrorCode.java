@@ -18,7 +18,10 @@ public enum ErrorCode {
 	TEAM_FULL(HttpStatus.CONFLICT, "모집 정원이 가득 찼습니다"),
 	NOT_TEAM_LEADER(HttpStatus.FORBIDDEN, "리더만 처리할 수 있습니다"),
 	MEMBER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 신청 내역입니다"),
-	APPLICATION_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리된 신청입니다");
+	APPLICATION_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리된 신청입니다"),
+
+	LEADER_CANNOT_LEAVE(HttpStatus.FORBIDDEN, "리더는 모임을 탈퇴할 수 없습니다"),
+	NOT_TEAM_MEMBER(HttpStatus.FORBIDDEN, "모임 멤버만 조회할 수 있습니다");
 
 	private final HttpStatus status;
 	private final String message;

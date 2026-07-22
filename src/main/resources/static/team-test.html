@@ -55,7 +55,7 @@
     .msg.ok { color: #1a7f37; }
     .msg.err { color: #d1242f; }
 
-    /* 모임 모집 패널 */
+    /* 잡코리아 공고 스타일 패널 */
     .team-panel {
         display: flex;
         justify-content: space-between;
@@ -146,7 +146,7 @@
     <div id="createTeamMsg" class="msg"></div>
 </section>
 
-<!-- ===================== 모임 목록 ===================== -->
+<!-- ===================== 모임 목록 (잡코리아 패널 스타일) ===================== -->
 <section>
     <h2>4. 모임 목록</h2>
     <button class="secondary" onclick="loadTeamList()">새로고침</button>
@@ -167,11 +167,23 @@
             <button class="apply-btn" id="modalApplyBtn">신청하기</button>
             <button class="secondary" onclick="closeModal()">닫기</button>
         </div>
+
+        <!-- 팀원 목록 (누구나 열람 가능) -->
+        <hr style="margin:16px 0; border:none; border-top:1px solid #eee;">
+        <div class="detail-row" style="font-weight:bold;">현재 팀원</div>
+        <ul id="modalMemberList" style="font-size:13px; padding-left:18px; margin:6px 0;"></ul>
+
+        <!-- 리더 전용: 신청 관리 (수락/거절) -->
+        <div id="leaderPanel" style="display:none; margin-top:12px;">
+            <hr style="margin:16px 0; border:none; border-top:1px solid #eee;">
+            <div class="detail-row" style="font-weight:bold;">신청 관리 (리더 전용)</div>
+            <ul id="modalApplicationList" style="font-size:13px; padding-left:0; margin:6px 0; list-style:none;"></ul>
+        </div>
     </div>
 </div>
 
 <script>
-const API_BASE = ""; // 상대경로
+const API_BASE = ""; // 같은 오리진(같은 Spring Boot 앱)에서 서빙되므로 상대경로로 충분
 
 // ---------- 인증 토큰 관리 (테스트 편의를 위해 sessionStorage 사용) ----------
 function getToken() { return sessionStorage.getItem("accessToken"); }
@@ -269,7 +281,7 @@ async function createTeam() {
     if (ok) loadTeamList();
 }
 
-// ---------- 4. 모임 목록 ----------
+// ---------- 4. 모임 목록 (잡코리아 패널 스타일) ----------
 async function loadTeamList() {
     const { ok, body } = await apiFetch("/api/teams", { method: "GET" });
     const listEl = document.getElementById("teamList");
@@ -305,6 +317,8 @@ async function loadTeamList() {
     });
 }
 
+let currentModalTeamId = null; // 현재 팝업이 보여주고 있는 팀 id (신청 관리 새로고침에 사용)
+
 // ---------- 패널의 설명 클릭 -> 상세 팝업 ----------
 async function openTeamDetail(teamId) {
     const { ok, body } = await apiFetch(`/api/teams/${teamId}`, { method: "GET" });
@@ -313,6 +327,8 @@ async function openTeamDetail(teamId) {
         return;
     }
     const d = body.data;
+    currentModalTeamId = teamId;
+
     document.getElementById("modalTitle").textContent = d.title;
     document.getElementById("modalCategory").textContent = d.category;
     document.getElementById("modalLeader").textContent = d.leaderNickname;
@@ -324,11 +340,82 @@ async function openTeamDetail(teamId) {
     const applyBtn = document.getElementById("modalApplyBtn");
     applyBtn.onclick = () => applyToTeam(d.teamId);
 
+    // 팀원 목록은 누구나 열람 가능
+    await loadModalMembers(teamId);
+
+    // 로그인한 유저가 이 팀의 리더인 경우에만 신청 관리 섹션 노출
+    const myUserId = sessionStorage.getItem("userId");
+    const leaderPanel = document.getElementById("leaderPanel");
+    if (myUserId && Number(myUserId) === d.leaderId) {
+        leaderPanel.style.display = "block";
+        await loadModalApplications(teamId);
+    } else {
+        leaderPanel.style.display = "none";
+    }
+
     document.getElementById("overlay").style.display = "flex";
 }
 
 function closeModal() {
     document.getElementById("overlay").style.display = "none";
+    currentModalTeamId = null;
+}
+
+// ---------- 팀원 목록 (승인된 멤버) ----------
+async function loadModalMembers(teamId) {
+    const { ok, body } = await apiFetch(`/api/teams/${teamId}/members`, { method: "GET" });
+    const listEl = document.getElementById("modalMemberList");
+    listEl.innerHTML = "";
+    if (!ok || !body || !body.data || body.data.length === 0) {
+        listEl.innerHTML = "<li>아직 팀원이 없습니다.</li>";
+        return;
+    }
+    body.data.forEach(m => {
+        const li = document.createElement("li");
+        li.textContent = `${m.nickname} (가입일: ${m.joinedAt})`;
+        listEl.appendChild(li);
+    });
+}
+
+// ---------- 신청 관리 (리더 전용) : 대기중인 신청 목록 + 수락/거절 ----------
+async function loadModalApplications(teamId) {
+    const { ok, body } = await apiFetch(`/api/teams/${teamId}/applications`, { method: "GET" });
+    const listEl = document.getElementById("modalApplicationList");
+    listEl.innerHTML = "";
+
+    if (!ok) {
+        listEl.innerHTML = `<li>신청 목록을 불러오지 못했습니다: ${body ? body.message : ""}</li>`;
+        return;
+    }
+    if (!body.data || body.data.length === 0) {
+        listEl.innerHTML = "<li>대기중인 신청이 없습니다.</li>";
+        return;
+    }
+
+    body.data.forEach(app => {
+        const li = document.createElement("li");
+        li.style.cssText = "display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid #f0f0f0;";
+        li.innerHTML = `
+            <span>${app.nickname} (${app.email})</span>
+            <span>
+                <button class="small" onclick="respondApplication(${teamId}, ${app.memberId}, 'approve')">수락</button>
+                <button class="small secondary" onclick="respondApplication(${teamId}, ${app.memberId}, 'reject')">거절</button>
+            </span>
+        `;
+        listEl.appendChild(li);
+    });
+}
+
+// 수락/거절 버튼 클릭 처리 -> 처리 후 신청목록/팀원목록/전체목록 새로고침
+async function respondApplication(teamId, memberId, action) {
+    const { ok, body } = await apiFetch(`/api/teams/${teamId}/applications/${memberId}/${action}`, { method: "POST" });
+    if (!ok) {
+        alert(body ? body.message : "처리에 실패했습니다.");
+        return;
+    }
+    await loadModalApplications(teamId);
+    await loadModalMembers(teamId);
+    await loadTeamList(); // 목록 패널의 인원수도 갱신
 }
 
 // ---------- 신청하기 버튼 ----------

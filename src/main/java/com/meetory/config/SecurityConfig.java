@@ -48,6 +48,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/", "/*.html", "/css/**", "/js/**", "/favicon.ico").permitAll() //정적 페이지 허용
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
+                        .requestMatchers("/api/users/me/**").authenticated() // 명시적으로 표현
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(

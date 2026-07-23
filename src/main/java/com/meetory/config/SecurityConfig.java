@@ -44,16 +44,12 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/", "/*.html", "/css/**", "/js/**", "/favicon.ico").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-
-                        .requestMatchers(HttpMethod.GET, "/", "/team-test.html", "/favicon.ico").permitAll()
-
+                        .requestMatchers("/api/users/me", "/api/users/me/**").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/teams/my").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/teams/*/applications").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/teams/*/members").authenticated()
                         .requestMatchers(HttpMethod.GET, "/api/teams/**").permitAll()
-
-                        .requestMatchers("/api/users/me/**").authenticated()
-
+                        .requestMatchers(HttpMethod.GET, "/api/boards/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(

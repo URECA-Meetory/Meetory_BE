@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 public class JwtTokenProvider {
 
     private final SecretKey key;
-    private final long expirationMs = 1000L * 60 * 60; // 1시간
+    private final long expirationMs = 1000L * 60 * 60; 
 
     public JwtTokenProvider(@Value("${jwt.secret}") String secret) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
@@ -48,21 +48,11 @@ public class JwtTokenProvider {
         return LocalDateTime.ofInstant(expiration.toInstant(), ZoneId.systemDefault());
     }
 
-//    public boolean validateToken(String token) {
-//        try {
-//            parseClaims(token);
-//            return true;
-//        } catch (JwtException | IllegalArgumentException e) {
-//            return false;
-//        }
-//    }
-    
     public boolean validateToken(String token) {
         try {
             parseClaims(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
-            System.out.println(">>> JWT validation failed: " + e.getClass().getSimpleName() + " - " + e.getMessage());
             return false;
         }
     }

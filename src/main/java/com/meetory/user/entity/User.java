@@ -53,4 +53,16 @@ public class User {
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
+    
+    // ======= 프로필 관리용 비지니스 매서드 ========
+    
+    // 닉네임 변경 (더티채킹으로 별도 save 호출없이 트랜잭션 종료시 자동 반영)
+    public void updateNickname(String nickname) {
+    	    this.nickname = nickname;
+    }
+    
+    // 비밀번호 병경시 사용 (암호와는 Service에서 처리 후 전달)
+    public void updatePassword(String encodedPassword) {
+    	    this.password = encodedPassword;
+    }
 }

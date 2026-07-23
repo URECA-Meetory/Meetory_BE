@@ -26,6 +26,10 @@ public class AuthService {
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenBlacklistRepository tokenBlacklistRepository;
 
+    public boolean isEmailAvailable(String email) {
+        return !userRepository.existsByEmail(email.trim());
+    }
+
     @Transactional
     public void signup(SignupRequest request) {
         if (userRepository.existsByEmail(request.email())) {

@@ -1,6 +1,6 @@
 package com.meetory.config;
 
-import com.meetory.auth.controller.AuthController;
+import java.util.List;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,12 +12,14 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import com.meetory.auth.jwt.JwtAuthenticationFilter;
 import com.meetory.auth.jwt.JwtTokenProvider;
 import com.meetory.auth.repository.TokenBlacklistRepository;
 
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 
 
@@ -30,31 +32,49 @@ public class SecurityConfig {
 	
 	private final JwtTokenProvider jwtTokenProvider;
 	private final TokenBlacklistRepository tokenBlacklistRepository;
+	private final JsonAuthEntryPoint jsonAuthEntryPoint;
+	private final JsonAccessDeniedHandler jsonAccessDeniedHandler;
 
 	
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .sessionManagement(session ->
                         session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/**").permitAll()
+                        .requestMatchers("/", "/*.html", "/css/**", "/js/**", "/favicon.ico").permitAll()
                         .requestMatchers("/swagger-ui/**", "/v3/api-docs/**").permitAll()
-                        .requestMatchers("/board.html", "/error").permitAll()//게시판 부분 테스트용으로 임시로 바꿈 삭제예정
+                        .requestMatchers("/api/users/me/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(
                         new JwtAuthenticationFilter(jwtTokenProvider, tokenBlacklistRepository),
                         UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint((request, response, authException) ->
-                                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "인증이 필요합니다"))
-                        .accessDeniedHandler((request, response, accessDeniedException) ->
-                                response.sendError(HttpServletResponse.SC_FORBIDDEN, "권한이 없습니다"))
+                        .authenticationEntryPoint(jsonAuthEntryPoint)
+                        .accessDeniedHandler(jsonAccessDeniedHandler)
                 );
 
         return http.build();
+    }
+    
+    // React(Vite, 5173) 등 SPA에서 API를 호출할 수 있도록 CORS 설정
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+    	    CorsConfiguration configuration = new CorsConfiguration();
+    	    configuration.addAllowedOriginPattern("*");
+    	    configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+    	    configuration.setAllowedHeaders(List.of("*"));
+    	    configuration.setExposedHeaders(List.of("Authorization"));
+    	    configuration.setAllowCredentials(false);
+    	    
+    	    UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+    	    source.registerCorsConfiguration("/**", configuration);
+    	    return source;
+    	
     }
 
     @Bean

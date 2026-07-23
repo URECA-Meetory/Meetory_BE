@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 public class JwtTokenProvider {
 
     private final SecretKey key;
-    private final long expirationMs = 1000L * 60 * 60; // 1시간
+    private final long expirationMs = 1000L * 60 * 60; 
 
     public JwtTokenProvider(@Value("${jwt.secret}") String secret) {
         this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));

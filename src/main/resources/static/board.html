@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meetory 게시판</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+</head>
+<body>
+	<nav class="navbar navbar-expand-lg bg-light">
+	  <div class="container">
+	    <a class="navbar-brand" href="#"><b>Meetory</b></a>
+	    <div class="collapse navbar-collapse">
+	      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+	        <li class="nav-item"><a class="nav-link active" href="#">게시판</a></li>
+	      </ul>
+		  <ul class="navbar-nav">
+  	        <li class="nav-item">
+  	          <a class="nav-link" href="#" id="navLoginBtn" data-bs-toggle="modal" data-bs-target="#authModal">로그인 / 회원가입</a>
+  	        </li>
+  	      </ul>		  
+	    </div>
+	  </div>
+	</nav>
+	
+	<div class="container mt-4">
+		<h4 class="text-center mb-4">자유 게시판</h4>
+		<div class="d-flex justify-content-between mb-2">
+            <span id="authStatus" class="text-danger fw-bold">로그인 안 됨 (토큰 없음)</span>
+            <button type="button" class="btn btn-primary" id="btnInsertPage">글 쓰기</button>
+        </div>
+		<table class="table table-hover text-center">
+		  <thead class="table-light">
+		    <tr>
+		      <th>#</th>
+		      <th width="40%">제목</th>
+		      <th>작성자</th>
+		      <th>작성일시</th>
+		    </tr>
+		  </thead>
+		  <tbody id="boardTbody"></tbody>
+		</table>
+	</div>	
+	
+	<!-- Auth 모달 -->
+	<div class="modal fade" id="authModal" tabindex="-1" aria-hidden="true">
+	  <div class="modal-dialog">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <h1 class="modal-title fs-5">로그인 및 회원가입</h1>
+	        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+	      </div>
+	      <div class="modal-body">
+            <input type="email" id="authEmail" class="form-control mb-2" placeholder="이메일">
+            <input type="password" id="authPassword" class="form-control mb-2" placeholder="비밀번호 (8자 이상)">
+            <input type="text" id="authNickname" class="form-control mb-3" placeholder="닉네임 (가입시에만)">
+            <div class="d-grid gap-2">
+                <button type="button" class="btn btn-success" onclick="login()">로그인</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="signup()">회원가입</button>
+            </div>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+
+	<!-- Insert 모달 -->
+	<div class="modal fade" id="insertBoardModal" tabindex="-1" aria-hidden="true">
+	  <div class="modal-dialog">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <h1 class="modal-title fs-5">새 글 작성</h1>
+	        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+	      </div>
+	      <div class="modal-body">
+			<div class="mb-3"><label class="form-label">제목</label><input type="text" class="form-control" id="titleInsert"></div>
+			<div class="mb-3"><label class="form-label">내용</label><textarea class="form-control" id="contentInsert" rows="8"></textarea></div>
+	      </div>
+	      <div class="modal-footer">
+	        <button id="btnBoardInsert" type="button" class="btn btn-primary">등록</button>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+
+    <!-- Detail 모달 -->
+	<div class="modal fade" id="detailBoardModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h1 class="modal-title fs-5">글 상세 보기</h1>
+              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <h5 id="detailTitle" class="fw-bold"></h5>
+                <p class="text-muted small">작성자: <span id="detailWriter"></span></p>
+                <hr>
+                <p id="detailContent" style="white-space: pre-wrap;"></p>
+            </div>
+            <!-- 글 작성자에게만 보이는 수정/삭제 버튼 영역 -->
+            <div class="modal-footer" id="detailFooter" style="display: none;">
+                <button type="button" class="btn btn-primary" onclick="openUpdateModal()">수정하기</button>
+				<button type="button" class="btn btn-danger" onclick="confirmDelete()">삭제하기</button>
+            </div>
+          </div>
+        </div>
+    </div>
+
+    <!-- Update 모달 (글수정) -->
+	<div class="modal fade" id="updateBoardModal" tabindex="-1" aria-hidden="true">
+	  <div class="modal-dialog">
+	    <div class="modal-content">
+	      <div class="modal-header">
+	        <h1 class="modal-title fs-5">글 수정</h1>
+	        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+	      </div>
+	      <div class="modal-body">
+            <!-- 현재 수정 중인 게시글 번호를 숨겨서 저장 -->
+            <input type="hidden" id="updateBoardId">
+			<div class="mb-3"><label class="form-label">제목</label><input type="text" class="form-control" id="titleUpdate"></div>
+			<div class="mb-3"><label class="form-label">내용</label><textarea class="form-control" id="contentUpdate" rows="8"></textarea></div>
+	      </div>
+	      <div class="modal-footer">
+	        <button type="button" class="btn btn-primary" onclick="updateBoard()">수정완료</button>
+	      </div>
+	    </div>
+	  </div>
+	</div>
+
+	<script>
+		let accessToken = "";
+        let currentNickname = ""; // 현재 로그인한 유저 닉네임 저장
+		
+		const authModal = new bootstrap.Modal(document.querySelector("#authModal"));
+		const insertModal = new bootstrap.Modal(document.querySelector("#insertBoardModal"));
+        const detailModal = new bootstrap.Modal(document.querySelector("#detailBoardModal"));
+        const updateModal = new bootstrap.Modal(document.querySelector("#updateBoardModal"));
+
+		window.onload = function(){
+			document.querySelector("#btnInsertPage").onclick = function(){
+                if(!accessToken) { alert("로그인이 필요합니다."); authModal.show(); return; }
+				document.querySelector("#titleInsert").value = '';				
+				document.querySelector("#contentInsert").value = '';
+				insertModal.show();
+			}
+			document.querySelector("#btnBoardInsert").onclick = function(){
+				if(document.querySelector("#titleInsert").value == '' || document.querySelector("#contentInsert").value == ''){
+					alert("제목 또는 내용을 모두 입력하세요."); return;
+				}
+				insertBoard();
+			}
+		}		
+	
+        async function signup() {
+            const email = document.getElementById("authEmail").value;
+            const password = document.getElementById("authPassword").value;
+            const nickname = document.getElementById("authNickname").value;
+            const res = await fetch("/api/auth/signup", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password, nickname }) });
+            const data = await res.json();
+            if (data.success) alert("회원가입 성공! 로그인을 진행해주세요.");
+            else alert("가입 실패: " + data.message);
+        }
+
+        async function login() {
+            const email = document.getElementById("authEmail").value;
+            const password = document.getElementById("authPassword").value;
+            const res = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ email, password }) });
+            const data = await res.json();
+            if (data.success && data.data.accessToken) {
+                accessToken = data.data.accessToken;
+                currentNickname = data.data.nickname; // 닉네임 저장
+                document.getElementById("authStatus").textContent = "로그인 완료: " + currentNickname;
+                document.getElementById("authStatus").className = "text-primary fw-bold";
+                document.getElementById("navLoginBtn").textContent = "로그아웃";
+                authModal.hide();
+                listBoard();
+            } else alert("로그인 실패: " + data.message);
+        }
+
+		async function listBoard(){
+			let res = await fetch("/api/boards", { method: "GET", headers: { "Authorization": `Bearer ${accessToken}` } });
+			let data = await res.json();
+			if(data.success){			
+                let listHtml = ``;
+                data.data.forEach( el => {
+                    let d = new Date(el.createdAt);
+                    let dateStr = d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,'0') + "-" + String(d.getDate()).padStart(2,'0');
+                    listHtml += `<tr style="cursor:pointer" onclick="showDetail(${el.id})">
+                        <td>${el.id}</td><td class="text-start">${el.title}</td><td>${el.writerNickname}</td><td>${dateStr}</td></tr>`;
+                });
+                document.querySelector("#boardTbody").innerHTML = listHtml;
+			}
+		}
+		
+		async function insertBoard(){
+            let payload = { title: document.querySelector("#titleInsert").value, content: document.querySelector("#contentInsert").value };
+			let res = await fetch("/api/boards", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` }, body: JSON.stringify(payload) });
+			let data = await res.json();
+			if(data.success){ alert("글이 등록되었습니다."); listBoard(); insertModal.hide(); }
+			else alert("등록 실패: " + data.message);
+		}
+
+        async function showDetail(boardId) {
+            let res = await fetch(`/api/boards/${boardId}`, { method: "GET", headers: { "Authorization": `Bearer ${accessToken}` } });
+            let data = await res.json();
+            if(data.success) {
+                let board = data.data;
+                // 수정용 임시 저장
+                document.getElementById("updateBoardId").value = board.id; 
+                document.getElementById("detailTitle").innerText = board.title;
+                document.getElementById("detailWriter").innerText = board.writerNickname;
+                document.getElementById("detailContent").innerText = board.content;
+                
+                // 내 글인지 확인하여 수정 버튼 영역 표시 여부 결정
+                if(currentNickname === board.writerNickname) {
+                    document.getElementById("detailFooter").style.display = "block";
+                } else {
+                    document.getElementById("detailFooter").style.display = "none";
+                }
+                detailModal.show();
+            }
+        }
+
+        // --- 게시글 수정 모달 열기 ---
+        function openUpdateModal() {
+            document.getElementById("titleUpdate").value = document.getElementById("detailTitle").innerText;
+            document.getElementById("contentUpdate").value = document.getElementById("detailContent").innerText;
+            detailModal.hide();
+            updateModal.show();
+        }
+
+        // --- 게시글 수정 API 호출 ---
+        async function updateBoard() {
+            let boardId = document.getElementById("updateBoardId").value;
+            let payload = { 
+                title: document.getElementById("titleUpdate").value, 
+                content: document.getElementById("contentUpdate").value 
+            };
+
+            let res = await fetch(`/api/boards/${boardId}`, { 
+                method: "PUT", 
+                headers: { "Content-Type": "application/json", "Authorization": `Bearer ${accessToken}` }, 
+                body: JSON.stringify(payload) 
+            });
+            let data = await res.json();
+            
+            if(data.success){ 
+                alert("글이 성공적으로 수정되었습니다."); 
+                listBoard(); 
+                updateModal.hide(); 
+            } else { 
+                alert("수정 실패: " + data.message); 
+            }
+        }
+		async function confirmDelete() {
+		            if(confirm("정말로 이 게시글을 삭제하시겠습니까? (삭제 후 복구할 수 없습니다)")) {
+		                let boardId = document.getElementById("updateBoardId").value;
+		                
+		                let res = await fetch(`/api/boards/${boardId}`, { 
+		                    method: "DELETE", 
+		                    headers: { "Authorization": `Bearer ${accessToken}` } 
+		                });
+		                
+		                let data = await res.json();
+		                
+		                if(data.success){ 
+		                    alert("글이 성공적으로 삭제되었습니다."); 
+		                    listBoard(); // 목록 새로고침
+		                    detailModal.hide(); // 모달 닫기
+		                } else { 
+		                    alert("삭제 실패: " + data.message); 
+		                }
+		            }
+		        }
+	</script>	
+</body>
+</html>

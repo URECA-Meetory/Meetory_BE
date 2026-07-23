@@ -34,6 +34,17 @@ public class User {
     @Column(nullable = false, length = 30)
     private String nickname;
 
+    private Integer age;
+
+    @Column(length = 20)
+    private String gender;
+
+    @Column(length = 255)
+    private String hobbies;
+
+    @Column(name = "onboarding_completed", nullable = false)
+    private boolean onboardingCompleted;
+
     @Column(nullable = false, length = 20)
     @Enumerated(EnumType.STRING)
     private Role role;
@@ -47,22 +58,38 @@ public class User {
         this.password = password;
         this.nickname = nickname;
         this.role = (role == null) ? Role.USER : role;
+        this.onboardingCompleted = false;
     }
 
     @PrePersist
     public void prePersist() {
         this.createdAt = LocalDateTime.now();
     }
-    
-    // ======= 프로필 관리용 비지니스 매서드 ========
-    
-    // 닉네임 변경 (더티채킹으로 별도 save 호출없이 트랜잭션 종료시 자동 반영)
+
     public void updateNickname(String nickname) {
-    	    this.nickname = nickname;
+        this.nickname = nickname;
     }
-    
-    // 비밀번호 병경시 사용 (암호와는 Service에서 처리 후 전달)
+
     public void updatePassword(String encodedPassword) {
-    	    this.password = encodedPassword;
+        this.password = encodedPassword;
+    }
+
+    public void completeOnboarding(Integer age, String gender, String hobbies) {
+        this.age = age;
+        this.gender = blankToNull(gender);
+        this.hobbies = blankToNull(hobbies);
+        this.onboardingCompleted = true;
+    }
+
+    public void skipOnboarding() {
+        this.onboardingCompleted = true;
+    }
+
+    private static String blankToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 }

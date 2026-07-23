@@ -1,4 +1,4 @@
-package com.meetory.member.entity;
+package com.meetory.message.entity;
 
 import java.time.LocalDateTime;
 
@@ -7,8 +7,6 @@ import com.meetory.user.entity.User;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -25,15 +23,15 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Table(
-		name = "member",
+		name = "message_thread",
 		uniqueConstraints = @UniqueConstraint(
-				name = "uk_member_team_user",
-				columnNames = { "team_id", "user_id" }
+				name = "uk_thread_team_starter_leader",
+				columnNames = { "team_id", "starter_id", "leader_id" }
 		)
 )
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Member {
+public class MessageThread {
 
 	@Id
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -44,37 +42,38 @@ public class Member {
 	private Team team;
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "user_id", nullable = false)
-	private User user;
+	@JoinColumn(name = "starter_id", nullable = false)
+	private User starter;
 
-	@Column(nullable = false, length = 20)
-	@Enumerated(EnumType.STRING)
-	private MemberStatus status;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "leader_id", nullable = false)
+	private User leader;
 
-	@Column(name = "joined_at", nullable = false, updatable = false)
-	private LocalDateTime joinedAt;
+	@Column(nullable = false, length = 100)
+	private String title;
+
+	@Column(name = "created_at", nullable = false, updatable = false)
+	private LocalDateTime createdAt;
+
+	@Column(name = "last_message_at", nullable = false)
+	private LocalDateTime lastMessageAt;
 
 	@Builder
-	public Member(Team team, User user) {
+	public MessageThread(Team team, User starter, User leader, String title) {
 		this.team = team;
-		this.user = user;
-		this.status = MemberStatus.대기;
+		this.starter = starter;
+		this.leader = leader;
+		this.title = title;
 	}
 
 	@PrePersist
 	public void prePersist() {
-		this.joinedAt = LocalDateTime.now();
+		LocalDateTime now = LocalDateTime.now();
+		this.createdAt = now;
+		this.lastMessageAt = now;
 	}
 
-	public void approve() {
-		this.status = MemberStatus.승인;
-	}
-
-	public void reject() {
-		this.status = MemberStatus.거절;
-	}
-
-	public boolean isPending() {
-		return this.status == MemberStatus.대기;
+	public void touchLastMessageAt() {
+		this.lastMessageAt = LocalDateTime.now();
 	}
 }

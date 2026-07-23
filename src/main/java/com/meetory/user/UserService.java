@@ -41,6 +41,7 @@ public class UserService {
     }
     
     // ====== 닉네임 변경 ======
+    @Transactional
     public ProfileResponse updateNickname(Long userId, ProfileUpdateRequest request) {
     	    User user = findUserById(userId);
     	    user.updateNickname(request.nickname());
@@ -88,8 +89,8 @@ public class UserService {
     	    	    );
     	    }
     	    
-    	    // User 삭제 시 board, comment, team, member는 
-    	    // DB의 ON DELETE CASCADE 제약에 의해 자동으로 함께 삭제
+    	    // User 삭제 시 연관 team/member/message 데이터는
+    	    // 서비스 레이어 또는 DB 제약에 따라 별도 처리 필요
     	    userRepository.delete(user);
     }
     

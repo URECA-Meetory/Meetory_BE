@@ -21,7 +21,12 @@ public enum ErrorCode {
 	APPLICATION_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리된 신청입니다"),
 
 	LEADER_CANNOT_LEAVE(HttpStatus.FORBIDDEN, "리더는 모임을 탈퇴할 수 없습니다"),
-	NOT_TEAM_MEMBER(HttpStatus.FORBIDDEN, "모임 멤버만 조회할 수 있습니다");
+	NOT_TEAM_MEMBER(HttpStatus.FORBIDDEN, "모임 멤버만 조회할 수 있습니다"),
+
+	// ---- 쪽지(문의하기) ----
+	THREAD_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 쪽지함입니다"),
+	NOT_THREAD_PARTICIPANT(HttpStatus.FORBIDDEN, "쪽지함에 접근할 권한이 없습니다"),
+	SELF_INQUIRY_NOT_ALLOWED(HttpStatus.FORBIDDEN, "자신이 개설한 모임에는 문의할 수 없습니다");
 
 	private final HttpStatus status;
 	private final String message;

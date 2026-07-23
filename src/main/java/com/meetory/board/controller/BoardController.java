@@ -30,7 +30,7 @@ public class BoardController {
             @Valid @RequestBody BoardCreateRequest request,
             @AuthenticationPrincipal Long userId) { //토큰에서 인증된 userId를 받dma
             
-        // 서비스로 진짜 userId를 넘겨줍니다.
+        // 서비스로 userId를 넘겨줍니다. 
         BoardResponse response = boardService.createBoard(request, userId);
         
         return ResponseEntity.status(HttpStatus.CREATED)

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.verify;
 import java.util.List;
 import java.util.Optional;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,10 +17,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import jakarta.persistence.EntityManager;
+
 import com.meetory.common.exception.CustomException;
 import com.meetory.member.entity.Member;
 import com.meetory.member.entity.MemberStatus;
 import com.meetory.member.repository.MemberRepository;
+import com.meetory.message.service.MessageService;
 import com.meetory.team.dto.TeamApplyResponse;
 import com.meetory.team.dto.TeamCreateRequest;
 import com.meetory.team.dto.TeamDetailResponse;
@@ -44,8 +48,19 @@ class TeamServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private MessageService messageService;
+
+    @Mock
+    private EntityManager entityManager;
+
     @InjectMocks
     private TeamService teamService;
+
+    @BeforeEach
+    void injectEntityManager() {
+        ReflectionTestUtils.setField(teamService, "entityManager", entityManager);
+    }
 
     private User buildUser(Long id, String email, String nickname) {
         User user = User.builder()
@@ -378,6 +393,32 @@ class TeamServiceTest {
         given(memberRepository.findById(1000L)).willReturn(Optional.of(pendingMember));
 
         assertThatThrownBy(() -> teamService.rejectApplication(100L, 1000L, 1L))
+                .isInstanceOf(CustomException.class);
+    }
+
+    @Test
+    void 모임삭제_성공() {
+        User leader = buildUser(1L, "leader@test.com", "리더");
+        Team team = buildTeam(100L, leader, 5, TeamStatus.모집중);
+
+        given(teamRepository.findById(100L)).willReturn(Optional.of(team));
+
+        teamService.deleteTeam(100L, 1L);
+
+        verify(messageService).notifyTeamDissolved(team);
+        verify(messageService).detachThreadsFromTeam(100L, team.getTitle());
+        verify(memberRepository).deleteByTeamId(100L);
+        verify(teamRepository).deleteById(100L);
+    }
+
+    @Test
+    void 모임삭제_실패_리더아님() {
+        User leader = buildUser(1L, "leader@test.com", "리더");
+        Team team = buildTeam(100L, leader, 5, TeamStatus.모집중);
+
+        given(teamRepository.findById(100L)).willReturn(Optional.of(team));
+
+        assertThatThrownBy(() -> teamService.deleteTeam(100L, 2L))
                 .isInstanceOf(CustomException.class);
     }
 }

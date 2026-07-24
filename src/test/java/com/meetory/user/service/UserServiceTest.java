@@ -7,7 +7,11 @@ import static org.mockito.Mockito.verify;
 
 import com.meetory.auth.jwt.JwtTokenProvider;
 import com.meetory.auth.repository.TokenBlacklistRepository;
+import com.meetory.board.repository.BoardRepository;
 import com.meetory.common.exception.CustomException;
+import com.meetory.member.repository.MemberRepository;
+import com.meetory.message.service.MessageService;
+import com.meetory.team.service.TeamService;
 import com.meetory.user.UserService;
 import com.meetory.user.dto.AccountDeleteRequest;
 import com.meetory.user.dto.PasswordUpdateRequest;
@@ -31,6 +35,10 @@ class UserServiceTest {
     @Mock private PasswordEncoder passwordEncoder;
     @Mock private JwtTokenProvider jwtTokenProvider;
     @Mock private TokenBlacklistRepository tokenBlacklistRepository;
+    @Mock private MemberRepository memberRepository;
+    @Mock private BoardRepository boardRepository;
+    @Mock private TeamService teamService;
+    @Mock private MessageService messageService;
 
     @InjectMocks
     private UserService userService;
@@ -116,6 +124,24 @@ class UserServiceTest {
 
         userService.deleteAccount(1L, request, "validToken");
 
+        verify(teamService).deleteAllTeamsLedBy(1L);
+        verify(messageService).deleteThreadsByUserId(1L);
+        verify(memberRepository).deleteByUserId(1L);
+        verify(boardRepository).deleteByUserId(1L);
+        verify(userRepository).delete(user);
+    }
+
+    @Test
+    void 계정삭제_성공_리더모임포함() {
+        User user = createUser();
+        AccountDeleteRequest request = new AccountDeleteRequest("password123");
+
+        given(userRepository.findById(1L)).willReturn(Optional.of(user));
+        given(passwordEncoder.matches("password123", user.getPassword())).willReturn(true);
+
+        userService.deleteAccount(1L, request, null);
+
+        verify(teamService).deleteAllTeamsLedBy(1L);
         verify(userRepository).delete(user);
     }
 

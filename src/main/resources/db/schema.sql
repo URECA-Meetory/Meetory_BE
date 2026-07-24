@@ -66,13 +66,14 @@ CREATE TABLE IF NOT EXISTS board (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS message_thread (
-    id               BIGINT       NOT NULL AUTO_INCREMENT,
-    team_id          BIGINT       NOT NULL,
-    starter_id       BIGINT       NOT NULL,
-    leader_id        BIGINT       NOT NULL,
-    title            VARCHAR(100) NOT NULL,
-    created_at       DATETIME     NOT NULL,
-    last_message_at  DATETIME     NOT NULL,
+    id                  BIGINT       NOT NULL AUTO_INCREMENT,
+    team_id             BIGINT       NULL,
+    starter_id          BIGINT       NOT NULL,
+    leader_id           BIGINT       NOT NULL,
+    title               VARCHAR(100) NOT NULL,
+    team_title_snapshot VARCHAR(100) NULL,
+    created_at          DATETIME     NOT NULL,
+    last_message_at     DATETIME     NOT NULL,
     PRIMARY KEY (id),
     CONSTRAINT uk_thread_team_starter_leader UNIQUE (team_id, starter_id, leader_id),
     CONSTRAINT fk_thread_team FOREIGN KEY (team_id) REFERENCES team (id),

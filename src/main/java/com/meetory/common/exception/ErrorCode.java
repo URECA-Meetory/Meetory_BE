@@ -21,6 +21,7 @@ public enum ErrorCode {
 	APPLICATION_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리된 신청입니다"),
 
 	LEADER_CANNOT_LEAVE(HttpStatus.FORBIDDEN, "리더는 모임을 탈퇴할 수 없습니다"),
+	LEADER_CANNOT_DELETE_ACCOUNT(HttpStatus.CONFLICT, "개설한 모임이 있으면 탈퇴할 수 없습니다. 모임을 먼저 처리해주세요."),
 	NOT_TEAM_MEMBER(HttpStatus.FORBIDDEN, "모임 멤버만 조회할 수 있습니다"),
 
 	// ---- 쪽지(문의하기) ----

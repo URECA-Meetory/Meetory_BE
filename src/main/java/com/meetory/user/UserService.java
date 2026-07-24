@@ -8,8 +8,12 @@ import org.springframework.stereotype.Service;
 import com.meetory.auth.entity.TokenBlacklist;
 import com.meetory.auth.jwt.JwtTokenProvider;
 import com.meetory.auth.repository.TokenBlacklistRepository;
+import com.meetory.board.repository.BoardRepository;
 import com.meetory.common.exception.CustomException;
 import com.meetory.common.exception.ErrorCode;
+import com.meetory.member.repository.MemberRepository;
+import com.meetory.message.service.MessageService;
+import com.meetory.team.service.TeamService;
 import com.meetory.user.dto.AccountDeleteRequest;
 import com.meetory.user.dto.OnboardingRequest;
 import com.meetory.user.dto.PasswordUpdateRequest;
@@ -29,6 +33,10 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
     private final TokenBlacklistRepository tokenBlacklistRepository;
+    private final MemberRepository memberRepository;
+    private final BoardRepository boardRepository;
+    private final TeamService teamService;
+    private final MessageService messageService;
 
     public ProfileResponse getProfile(Long userId) {
         return ProfileResponse.from(findUserById(userId));
@@ -89,7 +97,15 @@ public class UserService {
             );
         }
 
+        deleteRelatedData(userId);
         userRepository.delete(user);
+    }
+
+    private void deleteRelatedData(Long userId) {
+        teamService.deleteAllTeamsLedBy(userId);
+        messageService.deleteThreadsByUserId(userId);
+        memberRepository.deleteByUserId(userId);
+        boardRepository.deleteByUserId(userId);
     }
 
     private User findUserById(Long userId) {

@@ -41,8 +41,11 @@ public class MessageThread {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "team_id", nullable = false)
+    @JoinColumn(name = "team_id")
     private Team team;
+
+    @Column(name = "team_title_snapshot", length = 100)
+    private String teamTitleSnapshot;
 
     // 문의를 처음 보낸 사람 (신청자 등 일반 유저)
     @ManyToOne(fetch = FetchType.LAZY)
@@ -81,6 +84,22 @@ public class MessageThread {
 
     public void touch() {
         this.lastMessageAt = LocalDateTime.now();
+    }
+
+    public void detachFromTeam(String teamTitle) {
+        this.teamTitleSnapshot = teamTitle;
+        this.team = null;
+    }
+
+    public String resolvedTeamTitle() {
+        if (team != null) {
+            return team.getTitle();
+        }
+        return teamTitleSnapshot != null ? teamTitleSnapshot : "";
+    }
+
+    public Long resolvedTeamId() {
+        return team != null ? team.getId() : null;
     }
 
     public boolean isParticipant(Long userId) {

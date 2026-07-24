@@ -38,6 +38,8 @@
 | Test | JUnit 5, Mockito, AssertJ, Spring Boot Test |
 | 기타 | Lombok, Bean Validation(Jakarta Validation) |
 
+---
+
 ## 프로젝트 구조
 
 ```
@@ -110,6 +112,8 @@ src/main/resources
 └── static/team-test.html, board.html      # API 수동 테스트용 정적 페이지
 ```
 
+---
+
 ## 실행 방법
 
 ### 1) 사전 준비
@@ -150,6 +154,8 @@ gradlew.bat bootRun
 - 모임 매칭 API 테스트: `http://localhost:8080/team-test.html`
 - 게시판 API 테스트: `http://localhost:8080/board.html`
 - PowerShell 스크립트: `scripts/test-board-api.ps1`
+
+---
 
 ## API 명세
 
@@ -230,6 +236,8 @@ gradlew.bat bootRun
 - Bean Validation 실패(`MethodArgumentNotValidException`)는 첫 번째 필드 오류 메시지를 담아 `400 Bad Request`로 응답합니다.
 - 인증 실패(`401`) / 권한 없음(`403`) 은 `JsonAuthEntryPoint`, `JsonAccessDeniedHandler`가 JSON 형태로 일관되게 응답합니다.
 
+---
+
 ### 주요 `ErrorCode`
 
 | 코드 | 상태 | 메시지 |
@@ -245,6 +253,8 @@ gradlew.bat bootRun
 
 전체 목록은 `common/exception/ErrorCode.java`에서 확인할 수 있습니다.
 
+---
+
 ## 인증 & 보안
 
 - **JWT 발급/검증**: `JwtTokenProvider`가 로그인 시 `userId`, `role`을 담은 Access Token을 발급하고 서명/만료를 검증합니다.
@@ -256,6 +266,8 @@ gradlew.bat bootRun
 - **CORS**: `application.properties`의 `cors.allowed-origins` 값을 기반으로 허용 Origin을 구성합니다.
 - **비밀번호 저장**: `BCryptPasswordEncoder`로 해시하여 저장합니다.
 
+---
+
 ## 도메인 모델
 
 | 엔티티 | 설명 |
@@ -266,6 +278,8 @@ gradlew.bat bootRun
 | `MessageThread` / `MessageItem` | 모임 리더 문의를 위한 1:1 대화방과 메시지(말풍선) |
 | `Board` | 게시판 글(작성자/제목/본문/생성·수정일) |
 | `TokenBlacklist` | 로그아웃된 JWT 토큰 저장소 |
+
+---
 
 ## 테스트
 
@@ -280,6 +294,8 @@ gradlew.bat bootRun
 ```bash
 ./gradlew test
 ```
+
+---
 
 ## DB 마이그레이션
 

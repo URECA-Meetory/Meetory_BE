@@ -29,6 +29,7 @@ public enum ErrorCode {
 	NOT_THREAD_PARTICIPANT(HttpStatus.FORBIDDEN, "쪽지함에 접근할 권한이 없습니다"),
 	SELF_INQUIRY_NOT_ALLOWED(HttpStatus.FORBIDDEN, "자신이 개설한 모임에는 문의할 수 없습니다"),
 	BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다"),
+	COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다"),
 	FORBIDDEN_ACTION(HttpStatus.FORBIDDEN, "해당 작업에 대한 권한이 없습니다"),
 
 	INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다"),

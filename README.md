@@ -215,6 +215,8 @@ gradlew.bat bootRun
 | 게시글 수정(작성자만) | PUT | `/api/boards/{boardId}` | 🔒 |
 | 게시글 삭제(작성자만) | DELETE | `/api/boards/{boardId}` | 🔒 |
 
+---
+
 ## 공통 응답 / 예외 처리
 
 ### `ApiResponse<T>`

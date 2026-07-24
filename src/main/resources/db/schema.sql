@@ -7,19 +7,23 @@ FLUSH PRIVILEGES;
 USE meetorydb;
 
 CREATE TABLE IF NOT EXISTS users (
-    id          BIGINT       NOT NULL AUTO_INCREMENT,
-    email       VARCHAR(100) NOT NULL,
-    password    VARCHAR(255) NOT NULL,
-    nickname    VARCHAR(30)  NOT NULL,
-    role        VARCHAR(20)  NOT NULL,
-    created_at  DATETIME(6)  NOT NULL,
+    id                   BIGINT       NOT NULL AUTO_INCREMENT,
+    email                VARCHAR(100) NOT NULL,
+    password             VARCHAR(255) NOT NULL,
+    nickname             VARCHAR(30)  NOT NULL,
+    age                  INT          NULL,
+    gender               VARCHAR(20)  NULL,
+    hobbies              VARCHAR(255) NULL,
+    onboarding_completed TINYINT(1)   NOT NULL DEFAULT 0,
+    role                 VARCHAR(20)  NOT NULL,
+    created_at           DATETIME(6)  NOT NULL,
     PRIMARY KEY (id),
     UNIQUE KEY uk_users_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS token_blacklist (
     id          BIGINT       NOT NULL AUTO_INCREMENT,
-    token       VARCHAR(255) NOT NULL,
+    token       VARCHAR(512) NOT NULL,
     expired_at  DATETIME(6)  NOT NULL,
     created_at  DATETIME(6)  NOT NULL,
     PRIMARY KEY (id)
@@ -50,14 +54,26 @@ CREATE TABLE IF NOT EXISTS member (
     CONSTRAINT fk_member_user FOREIGN KEY (user_id) REFERENCES users (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS board (
+    id          BIGINT       NOT NULL AUTO_INCREMENT,
+    user_id     BIGINT       NOT NULL,
+    title       VARCHAR(200) NOT NULL,
+    content     TEXT         NOT NULL,
+    created_at  DATETIME(6)  NOT NULL,
+    updated_at  DATETIME(6)  NOT NULL,
+    PRIMARY KEY (id),
+    CONSTRAINT fk_board_user FOREIGN KEY (user_id) REFERENCES users (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS message_thread (
-    id               BIGINT       NOT NULL AUTO_INCREMENT,
-    team_id          BIGINT       NOT NULL,
-    starter_id       BIGINT       NOT NULL,
-    leader_id        BIGINT       NOT NULL,
-    title            VARCHAR(100) NOT NULL,
-    created_at       DATETIME     NOT NULL,
-    last_message_at  DATETIME     NOT NULL,
+    id                  BIGINT       NOT NULL AUTO_INCREMENT,
+    team_id             BIGINT       NULL,
+    starter_id          BIGINT       NOT NULL,
+    leader_id           BIGINT       NOT NULL,
+    title               VARCHAR(100) NOT NULL,
+    team_title_snapshot VARCHAR(100) NULL,
+    created_at          DATETIME     NOT NULL,
+    last_message_at     DATETIME     NOT NULL,
     PRIMARY KEY (id),
     CONSTRAINT uk_thread_team_starter_leader UNIQUE (team_id, starter_id, leader_id),
     CONSTRAINT fk_thread_team FOREIGN KEY (team_id) REFERENCES team (id),

@@ -4,7 +4,7 @@ import org.springframework.http.HttpStatus;
 
 public enum ErrorCode {
 
-	INVALID_INPUT(HttpStatus.BAD_REQUEST, "입력값이 올바르지 안습니다"),
+	INVALID_INPUT(HttpStatus.BAD_REQUEST, "입력값이 올바르지 않습니다"),
 	DUPLICATE_EMAIL(HttpStatus.CONFLICT, "이미 가입된 이메일입니다"),
 	INVALID_CREDENTIALS(HttpStatus.UNAUTHORIZED, "이메일 또는 비밀번호가 일치하지 않습니다"),
 	USER_NOT_FOUND(HttpStatus.NOT_FOUND, "존재하지 않는 사용자입니다"),
@@ -21,6 +21,7 @@ public enum ErrorCode {
 	APPLICATION_ALREADY_PROCESSED(HttpStatus.CONFLICT, "이미 처리된 신청입니다"),
 
 	LEADER_CANNOT_LEAVE(HttpStatus.FORBIDDEN, "리더는 모임을 탈퇴할 수 없습니다"),
+	LEADER_CANNOT_DELETE_ACCOUNT(HttpStatus.CONFLICT, "개설한 모임이 있으면 탈퇴할 수 없습니다. 모임을 먼저 처리해주세요."),
 	NOT_TEAM_MEMBER(HttpStatus.FORBIDDEN, "모임 멤버만 조회할 수 있습니다"),
 
 	// ---- 쪽지(문의하기) ----
@@ -28,8 +29,9 @@ public enum ErrorCode {
 	NOT_THREAD_PARTICIPANT(HttpStatus.FORBIDDEN, "쪽지함에 접근할 권한이 없습니다"),
 	SELF_INQUIRY_NOT_ALLOWED(HttpStatus.FORBIDDEN, "자신이 개설한 모임에는 문의할 수 없습니다"),
 	BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "게시글을 찾을 수 없습니다"),
+	COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "댓글을 찾을 수 없습니다"),
 	FORBIDDEN_ACTION(HttpStatus.FORBIDDEN, "해당 작업에 대한 권한이 없습니다"),
-	//프로필 관리 관련 추가
+
 	INVALID_PASSWORD(HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다"),
 	SAME_AS_OLD_PASSWORD(HttpStatus.BAD_REQUEST, "기존 비밀번호와 동일합니다");
 
@@ -48,4 +50,5 @@ public enum ErrorCode {
 	public String getmessage() {
 		return message;
 	}
+
 }

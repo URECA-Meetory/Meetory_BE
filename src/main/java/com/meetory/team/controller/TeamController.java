@@ -91,6 +91,14 @@ public class TeamController {
         return ResponseEntity.ok(ApiResponse.success("모임에서 탈퇴했습니다", null));
     }
 
+    @DeleteMapping("/{teamId}")
+    public ResponseEntity<ApiResponse<Void>> deleteTeam(
+            @PathVariable("teamId") Long teamId,
+            Authentication authentication) {
+        teamService.deleteTeam(teamId, currentUserId(authentication));
+        return ResponseEntity.ok(ApiResponse.success("모임이 삭제되었습니다", null));
+    }
+
     // 현재 팀 멤버(승인된 멤버) 목록 - 리더/멤버만 열람 가능 (로그인 필요)
     @GetMapping("/{teamId}/members")
     public ResponseEntity<ApiResponse<List<TeamMemberResponse>>> getTeamMembers(

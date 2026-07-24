@@ -1,5 +1,6 @@
 package com.meetory.team.service;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -11,6 +12,7 @@ import com.meetory.common.exception.ErrorCode;
 import com.meetory.member.entity.Member;
 import com.meetory.member.entity.MemberStatus;
 import com.meetory.member.repository.MemberRepository;
+import com.meetory.message.service.MessageService;
 import com.meetory.team.dto.MyTeamResponse;
 import com.meetory.team.dto.TeamApplicationResponse;
 import com.meetory.team.dto.TeamApplyResponse;
@@ -24,6 +26,8 @@ import com.meetory.team.repository.TeamRepository;
 import com.meetory.user.entity.User;
 import com.meetory.user.repository.UserRepository;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -34,6 +38,10 @@ public class TeamService {
     private final TeamRepository teamRepository;
     private final MemberRepository memberRepository;
     private final UserRepository userRepository;
+    private final MessageService messageService;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Transactional
     public Long createTeam(TeamCreateRequest request, Long leaderId) {
@@ -179,6 +187,30 @@ public class TeamService {
         if (team.getStatus() == TeamStatus.모집완료 && countApprovedMembers(team) < team.getMaxMembers()) {
             team.reopenRecruiting();
         }
+    }
+
+    // 리더가 모임을 삭제 - 멤버에게 쪽지 알림 후 모임/멤버 데이터 정리
+    @Transactional
+    public void deleteTeam(Long teamId, Long requesterId) {
+        Team team = findTeam(teamId);
+        requireLeader(team, requesterId);
+        purgeTeam(team);
+    }
+
+    @Transactional
+    public void deleteAllTeamsLedBy(Long userId) {
+        new ArrayList<>(teamRepository.findByLeaderId(userId)).forEach(this::purgeTeam);
+    }
+
+    private void purgeTeam(Team team) {
+        Long teamId = team.getId();
+        String teamTitle = team.getTitle();
+        messageService.notifyTeamDissolved(team);
+        messageService.detachThreadsFromTeam(teamId, teamTitle);
+        memberRepository.deleteByTeamId(teamId);
+        teamRepository.deleteById(teamId);
+        entityManager.flush();
+        entityManager.clear();
     }
 
     private void requireLeader(Team team, Long requesterId) {

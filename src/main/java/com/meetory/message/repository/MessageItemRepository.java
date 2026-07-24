@@ -7,6 +7,10 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+
 import com.meetory.message.entity.MessageItem;
 
 public interface MessageItemRepository extends JpaRepository<MessageItem, Long> {
@@ -23,4 +27,8 @@ public interface MessageItemRepository extends JpaRepository<MessageItem, Long> 
 
     // 쪽지함 진입 시 안읽은 메시지 일괄 읽음 처리용
     List<MessageItem> findByThreadIdAndSenderIdNotAndReadFalse(Long threadId, Long myUserId);
+
+    @Modifying(clearAutomatically = true)
+    @Query("delete from MessageItem m where m.thread.id = :threadId")
+    void deleteByThreadId(@Param("threadId") Long threadId);
 }

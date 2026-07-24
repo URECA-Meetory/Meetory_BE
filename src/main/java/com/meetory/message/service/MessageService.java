@@ -19,14 +19,16 @@ import com.meetory.message.entity.MessageItem;
 import com.meetory.message.entity.MessageThread;
 import com.meetory.message.repository.MessageItemRepository;
 import com.meetory.message.repository.MessageThreadRepository;
+import com.meetory.member.entity.Member;
+import com.meetory.member.entity.MemberStatus;
+import com.meetory.member.repository.MemberRepository;
 import com.meetory.team.entity.Team;
 import com.meetory.team.repository.TeamRepository;
+
 import com.meetory.user.entity.User;
 import com.meetory.user.repository.UserRepository;
 
 import lombok.RequiredArgsConstructor;
-
-// "모임장에게 문의하기" 쪽지 기능.
 // 같은 모임(team) + 같은 두 사람이면 대화방(MessageThread)을 재사용해서
 // 카카오톡/인스타 DM 처럼 답장이 하나의 스레드에 계속 쌓이도록 한다.
 @Service
@@ -40,6 +42,7 @@ public class MessageService {
     private final MessageItemRepository itemRepository;
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
+    private final MemberRepository memberRepository;
 
     // 팀 매칭 화면 "문의하기" 버튼 -> 최초 쪽지 전송 (이미 대화방이 있으면 이어서 전송)
     @Transactional
@@ -123,13 +126,60 @@ public class MessageService {
 
         return new ThreadDetailResponse(
                 thread.getId(),
-                thread.getTeam().getId(),
-                thread.getTeam().getTitle(),
+                thread.resolvedTeamId(),
+                thread.resolvedTeamTitle(),
                 thread.getTitle(),
                 other.getId(),
                 other.getNickname(),
                 messages
         );
+    }
+
+    // 리더가 모임을 삭제할 때 승인된 일반 멤버에게 탈퇴 안내 쪽지를 보낸다.
+    @Transactional
+    public void notifyTeamDissolved(Team team) {
+        User leader = team.getLeader();
+        String warningTitle = "[모임 삭제] " + team.getTitle();
+        String warningContent =
+                "참여 중이던 '" + team.getTitle() + "' 모임이 리더에 의해 삭제되어 자동으로 탈퇴되었습니다.";
+
+        memberRepository.findByTeamIdAndStatus(team.getId(), MemberStatus.승인).stream()
+                .map(Member::getUser)
+                .filter(user -> !user.getId().equals(leader.getId()))
+                .forEach(member -> sendDissolveNotice(team, leader, member, warningTitle, warningContent));
+    }
+
+    @Transactional
+    public void detachThreadsFromTeam(Long teamId, String teamTitle) {
+        for (MessageThread thread : threadRepository.findByTeamId(teamId)) {
+            thread.detachFromTeam(teamTitle);
+            threadRepository.save(thread);
+        }
+    }
+
+    @Transactional
+    public void deleteThreadsByUserId(Long userId) {
+        for (MessageThread thread : threadRepository.findByStarterId(userId)) {
+            itemRepository.deleteByThreadId(thread.getId());
+            threadRepository.delete(thread);
+        }
+        for (MessageThread thread : threadRepository.findByLeaderId(userId)) {
+            itemRepository.deleteByThreadId(thread.getId());
+            threadRepository.delete(thread);
+        }
+    }
+
+    private void sendDissolveNotice(Team team, User leader, User member, String title, String content) {
+        MessageThread thread = threadRepository
+                .findByTeamIdAndStarterIdAndLeaderId(team.getId(), member.getId(), leader.getId())
+                .orElseGet(() -> threadRepository.save(
+                        MessageThread.builder()
+                                .team(team)
+                                .starter(member)
+                                .leader(leader)
+                                .title(title)
+                                .build()));
+        saveItem(thread, leader, content);
     }
 
     private MessageItem saveItem(MessageThread thread, User sender, String content) {
@@ -148,8 +198,8 @@ public class MessageService {
 
         return new ThreadSummaryResponse(
                 thread.getId(),
-                thread.getTeam().getId(),
-                thread.getTeam().getTitle(),
+                thread.resolvedTeamId(),
+                thread.resolvedTeamTitle(),
                 thread.getTitle(),
                 thread.theOther(userId).getNickname(),
                 truncate(last == null ? "" : last.getContent()),
